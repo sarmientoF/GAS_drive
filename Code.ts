@@ -1,4 +1,4 @@
-const spreadName = 'Google_GAS_application_spread_0118c4ee'
+const spreadName = 'google-visitor-manager'
 const spreadId = findFile()
 console.log('🚀🚀', spreadId)
 
@@ -58,7 +58,6 @@ function getViewers(fileId: string) {
     })
 }
 
-
 function onOpen() {
     SpreadsheetApp.getUi()
         .createMenu('Picker')
@@ -86,15 +85,12 @@ function doGet() {
         .setSandboxMode(HtmlService.SandboxMode.IFRAME)
 }
 
-
-
 function modifySpread(contents: string[], id: string = spreadId) {
     console.log('🚀 modify Spread', contents)
 
     var file = SpreadsheetApp.openById(id)
     file.appendRow(contents)
 }
-
 
 const customMessage = (
     extraMessage: string,

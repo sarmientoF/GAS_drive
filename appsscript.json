@@ -1,14 +1,7 @@
 {
   "timeZone": "America/New_York",
-  "exceptionLogging": "CLOUD",
-  "runtimeVersion": "DEPRECATED_ES5",
-  "webapp": {
-    "executeAs": "USER_ACCESSING",
-    "access": "ANYONE"
-  },
-  "executionApi": {
-    "access": "ANYONE"
-  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
   "dependencies": {
     "enabledAdvancedServices": [
       {
@@ -17,5 +10,9 @@
         "serviceId": "drive"
       }
     ]
+  },
+  "webapp": {
+    "executeAs": "USER_ACCESSING",
+    "access": "DOMAIN"
   }
 }
