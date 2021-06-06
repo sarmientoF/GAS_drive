@@ -1,36 +1,45 @@
-const spreadName = 'google-visitor-manager'
-const spreadId = findFile()
-console.log('🚀🚀', spreadId)
+///////// Set your properties /////////////////
+const sharedSpreadId = '1NT9H4uQ7Jyzn0df7ZZPNtHuXM3Sf_Lm6eGFNxRa1wPI'
+const sharedFolderId = '1derhMC8Aoq8ULDoZ0Vde94_e3XjzJGlo'
 
-function createSpreadSheet() {
-    var folderId = DriveApp.getRootFolder().getId()
-    var resource: GoogleAppsScript.Drive.Schema.File = {
-        title: spreadName,
-        //@ts-ignore
-        mimeType: MimeType.GOOGLE_SHEETS,
-        parents: [{ id: folderId }],
-    }
-    var fileJson = Drive.Files.insert(resource)
-    var fileId = fileJson.id
-    modifySpread(
-        ['FileID', 'Name', 'UserEmails', 'Expiration', 'isTrashed'],
-        fileId
-    )
-    console.log('🚀 Created Spread', fileId)
-    return fileId
-}
-function findFile() {
-    var root = DriveApp.getRootFolder()
-    var files = root.getFilesByName(spreadName)
-    if (files.hasNext()) {
-        return files.next().getId()
-    }
-    return createSpreadSheet()
+const driveFolder = DriveApp.getFolderById(sharedFolderId)
+const spreadsheet = SpreadsheetApp.openById(sharedSpreadId)
+
+const fileIdRow = 0
+const copyIdRow = 1
+const emailRow = 3
+const expirationRow = 5
+
+///////////////// Trigger ////////////////////////////
+function removeExpiredFiles() {
+    var todayTime = new Date().getTime()
+    var range = spreadsheet.getDataRange()
+    var sheet = range.getValues()
+    var values = sheet.slice(1, sheet.length)
+    var expiredRows = []
+    var count = 0
+    values.forEach(function (row, index) {
+        var copyId = row[copyIdRow]
+        var expiration = row[expirationRow]
+        var expirationDate = new Date(expiration)
+        // If expired Remove Copy file
+        if (expirationDate.getTime() < todayTime) {
+            // Remove File
+            let expiredFile = DriveApp.getFileById(copyId)
+            expiredFile.setTrashed(true)
+            // Add expired row
+            expiredRows.push(index)
+        }
+    })
+    expiredRows.forEach(function (index) {
+        spreadsheet.deleteRow(index + 2 - count)
+        count += 1
+    })
 }
 
+/////////////////// Spreadsheet ///////////////////////
 function getVersions(myFileId: string, myEmails: string[]) {
-    var file = SpreadsheetApp.openById(spreadId)
-    var range = file.getDataRange()
+    var range = spreadsheet.getDataRange()
 
     var sheet = range.getValues()
 
@@ -38,8 +47,8 @@ function getVersions(myFileId: string, myEmails: string[]) {
 
     var versions = myEmails.map((_) => 0)
     values.forEach((row) => {
-        let fileId = row[0]
-        let emails = (row[2] as string).split(',')
+        let fileId = row[fileIdRow]
+        let emails = (row[emailRow] as string).split(',')
         if (fileId == myFileId) {
             myEmails.forEach((myEmail, i) => {
                 if (emails.indexOf(myEmail) > -1) versions[i] += 1
@@ -47,7 +56,6 @@ function getVersions(myFileId: string, myEmails: string[]) {
         }
     })
 
-    console.log('🚀', versions)
     return versions
 }
 function getViewers(fileId: string) {
@@ -58,40 +66,11 @@ function getViewers(fileId: string) {
     })
 }
 
-function onOpen() {
-    SpreadsheetApp.getUi()
-        .createMenu('Picker')
-        .addItem('Start', 'showPicker')
-        .addToUi()
+function modifySpread(contents: string[]) {
+    spreadsheet.appendRow(contents)
 }
 
-function showPicker() {
-    var html = HtmlService.createHtmlOutputFromFile('dialog.html')
-        .setWidth(600)
-        .setHeight(425)
-        .setSandboxMode(HtmlService.SandboxMode.IFRAME)
-    SpreadsheetApp.getUi().showModalDialog(html, 'Select a file')
-}
-
-function getOAuthToken() {
-    DriveApp.getRootFolder()
-    return ScriptApp.getOAuthToken()
-}
-
-function doGet() {
-    return HtmlService.createTemplateFromFile('form.html')
-        .evaluate()
-        .setTitle('Google GAS application')
-        .setSandboxMode(HtmlService.SandboxMode.IFRAME)
-}
-
-function modifySpread(contents: string[], id: string = spreadId) {
-    console.log('🚀 modify Spread', contents)
-
-    var file = SpreadsheetApp.openById(id)
-    file.appendRow(contents)
-}
-
+////////////////// Share File ////////////////////
 const customMessage = (
     extraMessage: string,
     expiration: string,
@@ -99,9 +78,8 @@ const customMessage = (
     version: number = 0
 ) => {
     var verString = version == 0 ? '' : `_Ver${version}`
-    return `ProCube作業の作業報告書を送ります。
-    Filename: ${fileName}${verString}。
-    ${extraMessage}。
+    return `${extraMessage}
+    ファイル名: ${fileName}${verString}
     このファイルは${expiration}には削除しますので、必要に応じてそれまでにダウンロードいただくようお願いします。`
 }
 
@@ -111,59 +89,103 @@ function uploadFromDrive(e: any) {
     var ids = e.fileId as string
     var expiration = e.expiration as string
     var message = e.message as string
-    // var expirationOr = new Date(e.expiration)
-    // var expiration = new Date(expirationOr.getTime() - 9 * 60 * 60 * 1000)
     // Get Files ids and emails
     var emails = arr.toString().split(',')
     var fileIds = ids.split(',')
 
     if (fileIds.length == 1) {
         var fileId = fileIds[0]
-        var fileName = DriveApp.getFileById(fileId).getName()
-        var versions = getVersions(fileId, emails)
-        shareFileToUsers(
-            emails,
-            fileId,
-            fileName,
-            expiration,
-            versions,
-            message
-        )
+        try {
+            // is file
+            var file = DriveApp.getFileById(fileId)
+            var copy = file.makeCopy(file.getName(), driveFolder)
+            var versions = getVersions(fileId, emails)
+
+            shareFileToUsers(
+                emails,
+                fileId,
+                copy.getId(),
+                file.getName(),
+                expiration,
+                versions,
+                message
+            )
+        } catch (error) {
+            // is folder
+            var { id: folderId, name: folderName } = copySingleFolder(
+                fileIds[0]
+            )
+            shareFolderToUsers(
+                emails,
+                folderId,
+                folderName,
+                expiration,
+                message
+            )
+        }
     } else {
         // Find folder where files are
-        var { id: zipId, name: zipName } = zipFiles(fileIds)
-        shareZipToUsers(emails, zipId, zipName, expiration, message)
+        var { id: folderId, name: folderName } = copyMultipleFiles(fileIds)
+        shareFolderToUsers(emails, folderId, folderName, expiration, message)
     }
 }
 
-function zipFiles(fileIds: string[]) {
-    var firstFile = DriveApp.getFileById(fileIds[0])
-    var folder = firstFile.getParents().next()
+function getFiles(
+    rootFolder: GoogleAppsScript.Drive.Folder,
+    destFolder: GoogleAppsScript.Drive.Folder
+) {
+    var files = rootFolder.getFiles()
+    while (files.hasNext()) {
+        var file = files.next()
+        file.makeCopy(destFolder)
+    }
+    var folders = rootFolder.getFolders()
+    while (folders.hasNext()) {
+        var folder = folders.next()
+        var copyFolder = destFolder.createFolder(folder.getName())
+        getFiles(folder, copyFolder)
+    }
+}
+function copySingleFolder(id: string) {
+    var folder = DriveApp.getFolderById(id)
+    var outFolder = driveFolder.createFolder(folder.getName())
+    getFiles(folder, outFolder)
+
+    return { id: outFolder.getId(), name: outFolder.getName() }
+}
+
+function copyMultipleFiles(ids: string[]) {
     var names: Array<string> = []
-    var file = folder.createFile(
-        Utilities.zip(
-            fileIds.map((id, i) => {
-                var file_ = DriveApp.getFileById(id)
-                var name = file_.getName()
-                names.push(name)
-                return file_.getBlob().setName(name)
-            }),
-            names.join('<>') + '.zip'
-        )
-    )
-    console.log('🚀 Zip File Created', file.getId())
-    return { id: file.getId(), name: file.getName() }
+    const tempName = Math.random().toString(36).substr(2, 9)
+    const outFolder = driveFolder.createFolder(tempName)
+    ids.forEach((id) => {
+        try {
+            let file = DriveApp.getFileById(id)
+            file.makeCopy(file.getName(), outFolder)
+            names.push(file.getName())
+        } catch (err) {
+            var folder = DriveApp.getFolderById(id)
+            var copyFolder = outFolder.createFolder(folder.getName())
+            getFiles(folder, copyFolder)
+            names.push(folder.getName())
+        }
+    })
+    outFolder.setName(names.join('__'))
+
+    return { id: outFolder.getId(), name: outFolder.getName() }
 }
 
 function shareFileToUsers(
     emails: string[],
     fileId: string,
+    copyId: string,
     fileName: string,
     expiration: string,
     versions: number[],
     extraMessage: string
 ) {
     var date = new Date(expiration)
+    date.setHours(date.getHours() + 1)
 
     emails.forEach((email, i) => {
         let body = customMessage(
@@ -177,14 +199,16 @@ function shareFileToUsers(
 
     modifySpread([
         fileId,
+        copyId,
         fileName,
         emails.toString(),
+        extraMessage,
         date.toISOString(),
-        'false',
+        new Date().toTimeString(),
     ])
 }
 
-function shareZipToUsers(
+function shareFolderToUsers(
     emails: string[],
     fileId: string,
     fileName: string,
@@ -192,6 +216,8 @@ function shareZipToUsers(
     extraMessage: string
 ) {
     var date = new Date(expiration)
+    date.setHours(date.getHours() + 1)
+
     emails.forEach((email) => {
         let body = customMessage(extraMessage, expiration, fileName)
         shareFileToUser(email, fileId, body, date)
@@ -199,10 +225,12 @@ function shareZipToUsers(
 
     modifySpread([
         fileId,
+        fileId,
         fileName,
         emails.toString(),
+        extraMessage,
         date.toISOString(),
-        'false',
+        new Date().toTimeString(),
     ])
 }
 
@@ -232,4 +260,34 @@ function shareFileToUser(
         fileId,
         permission.id
     )
+}
+
+/////////// Google Drive Picker /////////////////////////
+
+function onOpen() {
+    SpreadsheetApp.getUi()
+        .createMenu('Picker')
+        .addItem('Start', 'showPicker')
+        .addToUi()
+}
+
+function showPicker() {
+    var html = HtmlService.createHtmlOutputFromFile('dialog.html')
+        .setWidth(600)
+        .setHeight(425)
+        .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+    SpreadsheetApp.getUi().showModalDialog(html, 'Select a file')
+}
+
+function getOAuthToken() {
+    DriveApp.getRootFolder()
+    return ScriptApp.getOAuthToken()
+}
+
+///////////////// DO GET ///////////////////////////////////
+function doGet() {
+    return HtmlService.createTemplateFromFile('form.html')
+        .evaluate()
+        .setTitle('Google Visitor Manager')
+        .setSandboxMode(HtmlService.SandboxMode.IFRAME)
 }
