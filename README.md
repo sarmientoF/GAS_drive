@@ -46,8 +46,8 @@
 
     - Application restrictions -> HTTP referrers(websites)
     - Website restrictions
-        - *google.com/*
-        - *googleusercontent.com/*
+        - \*google.com/*
+        - \*googleusercontent.com/*
     - API restrictions -> Don't restrict key
 
 4. Open the file `form.html` and update this file with your `API_KEY` 🔑
