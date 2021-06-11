@@ -46,8 +46,8 @@
 
     - Application restrictions -> HTTP referrers(websites)
     - Website restrictions
-        - \*google.com
-        - \*googleusercontent.com
+        - *google.com/*
+        - *googleusercontent.com/*
     - API restrictions -> Don't restrict key
 
 4. Open the file `form.html` and update this file with your `API_KEY` 🔑
@@ -63,10 +63,10 @@
         - Google Drive API
         - Apps Script API
 
-6. Login to clasp and create a new GAS project, select webapp
+6. Login to clasp and create a new GAS project
     ```sh
     yarn clasp login
-    yarn clasp create --title [scriptTitle]
+    yarn clasp create --title [scriptTitle] --type webapp
     ```
 7. Specify the id of the Google Cloud Platform project
 
