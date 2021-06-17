@@ -127,13 +127,17 @@
             function pickerCallback(data) {
                 var action = data[google.picker.Response.ACTION];
                 if (action == google.picker.Action.PICKED) {
-                    var out = []
+                    var names = []
+                    var ids = []
                     for (var index = 0; index < data[google.picker.Response.DOCUMENTS].length; index++) {
                         var doc = data[google.picker.Response.DOCUMENTS][index];
                         var id = doc[google.picker.Document.ID];
-                        out.push(id)
+                        var name = doc[google.picker.Document.NAME];
+                        names.push(name)
+                        ids.push(id)
                     }
-                    document.getElementById("result").value = out.toString()
+                    document.getElementById("result").value = names.toString()
+                    document.getElementById("result_ids").value = ids.toString()
                 } else if (action == google.picker.Action.CANCEL) {
                     //     "Picker canceled.";
                 }
@@ -155,7 +159,8 @@
                     value="ファイルを選択"
                     onclick="getOAuthToken()"
                 ></input>
-                <input id="result" type="text" name="fileId" placeholder="ファイルID" required data-readonly></input>
+                <textarea id="result" name="fileName" rows="2" cols="10" placeholder="ファイル名" required></textarea>
+                <input id="result_ids" type="hidden" name="fileId" placeholder="ファイルID" required data-readonly></input>
     
                 <label for="fname">ファイルダウンロードの有効期限</label>
     
@@ -171,7 +176,7 @@
                     type="email"
                     class="email"
                     name="array[]"
-                    value="sarmiento.f.aa@gmail.com"
+                    value=""
                     placeholder="InsetEmail"
                     required
                 />
