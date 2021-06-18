@@ -1,7 +1,7 @@
 ///////// Set your properties /////////////////
 const sharedSpreadId = '1NT9H4uQ7Jyzn0df7ZZPNtHuXM3Sf_Lm6eGFNxRa1wPI'
 const sharedFolderId = '1derhMC8Aoq8ULDoZ0Vde94_e3XjzJGlo'
-///////////////////////////////////////////////////
+///////////////////////////////////////////////
 
 const driveFolder = DriveApp.getFolderById(sharedFolderId)
 const spreadsheet = SpreadsheetApp.openById(sharedSpreadId)
@@ -10,6 +10,7 @@ const fileIdRow = 0
 const copyIdRow = 1
 const emailRow = 3
 const expirationRow = 5
+const versionRow = 7
 
 ///////////////// Trigger ////////////////////////////
 function removeExpiredFiles() {
@@ -39,25 +40,23 @@ function removeExpiredFiles() {
 }
 
 /////////////////// Spreadsheet ///////////////////////
-function getVersions(myFileId: string, myEmails: string[]) {
+function getVersions(myFileId: string) {
     var range = spreadsheet.getDataRange()
 
     var sheet = range.getValues()
 
     var values = sheet.slice(1, sheet.length)
 
-    var versions = myEmails.map((_) => 0)
+    var version = 0
+
     values.forEach((row) => {
         let fileId = row[fileIdRow]
-        let emails = (row[emailRow] as string).split(',')
+        let fileVersion = row[versionRow]
         if (fileId == myFileId) {
-            myEmails.forEach((myEmail, i) => {
-                if (emails.indexOf(myEmail) > -1) versions[i] += 1
-            })
+            version = fileVersion + 1
         }
     })
-
-    return versions
+    return version
 }
 function getViewers(fileId: string) {
     const file = DriveApp.getFileById(fileId)
@@ -67,7 +66,7 @@ function getViewers(fileId: string) {
     })
 }
 
-function modifySpread(contents: string[]) {
+function modifySpread(contents: any[]) {
     spreadsheet.appendRow(contents)
 }
 
@@ -78,9 +77,9 @@ const customMessage = (
     fileName: string,
     version: number = 0
 ) => {
-    var verString = version == 0 ? '' : `_Ver${version}`
+    var verString = version == 0 ? '' : `Ver${version}_`
     return `${extraMessage}
-    ファイル名: ${fileName}${verString}
+    ファイル名: ${verString}${fileName}
     このファイルは${expiration}には削除しますので、必要に応じてそれまでにダウンロードいただくようお願いします。`
 }
 
@@ -99,35 +98,51 @@ function uploadFromDrive(e: any) {
         try {
             // is file
             var file = DriveApp.getFileById(fileId)
-            var copy = file.makeCopy(file.getName(), driveFolder)
-            var versions = getVersions(fileId, emails)
+            var version = getVersions(fileId)
+            var versionName = version > 0 ? `Version${version}_` : ''
+            var newName = `${versionName}${file.getName()}`
+
+            var copy = file.makeCopy(newName, driveFolder)
 
             shareFileToUsers(
                 emails,
                 fileId,
                 copy.getId(),
-                file.getName(),
+                newName,
                 expiration,
-                versions,
+                version,
                 message
             )
         } catch (error) {
             // is folder
-            var { id: folderId, name: folderName } = copySingleFolder(
-                fileIds[0]
-            )
+            var {
+                id: folderId,
+                copyId: copyId,
+                name: folderName,
+                version: version_,
+            } = copySingleFolder(fileIds[0])
             shareFolderToUsers(
                 emails,
                 folderId,
+                copyId,
                 folderName,
                 expiration,
-                message
+                message,
+                version_
             )
         }
     } else {
         // Find folder where files are
-        var { id: folderId, name: folderName } = copyMultipleFiles(fileIds)
-        shareFolderToUsers(emails, folderId, folderName, expiration, message)
+        var { id: folderId_, name: folderName_ } = copyMultipleFiles(fileIds)
+        shareFolderToUsers(
+            emails,
+            folderId_,
+            folderId_,
+            folderName_,
+            expiration,
+            message,
+            0
+        )
     }
 }
 
@@ -149,10 +164,20 @@ function getFiles(
 }
 function copySingleFolder(id: string) {
     var folder = DriveApp.getFolderById(id)
-    var outFolder = driveFolder.createFolder(folder.getName())
+
+    var version = getVersions(id)
+    var versionName = version > 0 ? `Version${version}_` : ''
+    var newName = `${versionName}${folder.getName()}`
+
+    var outFolder = driveFolder.createFolder(newName)
     getFiles(folder, outFolder)
 
-    return { id: outFolder.getId(), name: outFolder.getName() }
+    return {
+        id: id,
+        copyId: outFolder.getId(),
+        name: outFolder.getName(),
+        version: version,
+    }
 }
 
 function copyMultipleFiles(ids: string[]) {
@@ -182,19 +207,14 @@ function shareFileToUsers(
     copyId: string,
     fileName: string,
     expiration: string,
-    versions: number[],
+    version: number,
     extraMessage: string
 ) {
     var date = new Date(expiration)
     date.setHours(date.getHours() + 1)
 
     emails.forEach((email, i) => {
-        let body = customMessage(
-            extraMessage,
-            expiration,
-            fileName,
-            versions[i]
-        )
+        let body = customMessage(extraMessage, expiration, fileName, version)
         shareFileToUser(email, fileId, body, date)
     })
 
@@ -206,32 +226,36 @@ function shareFileToUsers(
         extraMessage,
         date.toISOString(),
         new Date().toTimeString(),
+        version,
     ])
 }
 
 function shareFolderToUsers(
     emails: string[],
     fileId: string,
+    copyId: string,
     fileName: string,
     expiration: string,
-    extraMessage: string
+    extraMessage: string,
+    version: number
 ) {
     var date = new Date(expiration)
     date.setHours(date.getHours() + 1)
 
     emails.forEach((email) => {
         let body = customMessage(extraMessage, expiration, fileName)
-        shareFileToUser(email, fileId, body, date)
+        shareFileToUser(email, copyId, body, date)
     })
 
     modifySpread([
         fileId,
-        fileId,
+        copyId,
         fileName,
         emails.toString(),
         extraMessage,
         date.toISOString(),
         new Date().toTimeString(),
+        version,
     ])
 }
 
