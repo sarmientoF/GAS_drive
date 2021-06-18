@@ -26,7 +26,7 @@
 
 -   A folder to store the a copy of the file(s) you want to share (`sharedFolderId`)
 -   A spreadsheet to keep track of your shared files (`sharedSpreadId`) with headers in the first row
-    - Original | File ID | Copy File ID | Name | Shared Emails | Extra Message | Expiration Date ISO | Shared Date																					
+    -   Original | File ID | Copy File ID | Name | Shared Emails | Extra Message | Expiration Date ISO | Shared Date | Version
 
 ## Installation
 
@@ -46,8 +46,8 @@
 
     - Application restrictions -> HTTP referrers(websites)
     - Website restrictions
-        - \*google.com/*
-        - \*googleusercontent.com/*
+        - \*google.com/\*
+        - \*googleusercontent.com/\*
     - API restrictions -> Don't restrict key
 
 4. Open the file `form.html` and update this file with your `API_KEY` 🔑
@@ -111,6 +111,3 @@
     - Select event source: `Time-driven`
     - Select type of time based trigger: `Day timer`
     - Select time of day: `1am to 2am`
-
-
-
