@@ -1,7 +1,9 @@
-///////// Set your properties /////////////////
-const sharedSpreadId = '1NT9H4uQ7Jyzn0df7ZZPNtHuXM3Sf_Lm6eGFNxRa1wPI'
-const sharedFolderId = '1derhMC8Aoq8ULDoZ0Vde94_e3XjzJGlo'
-///////////////////////////////////////////////
+///////////////// Import Variables ////////////
+var scriptProperties = PropertiesService.getScriptProperties()
+
+const sharedSpreadId = scriptProperties.getProperty('sharedSpreadId')
+const sharedFolderId = scriptProperties.getProperty('sharedFolderId')
+const developerKey = scriptProperties.getProperty('developerKey')
 
 const driveFolder = DriveApp.getFolderById(sharedFolderId)
 const spreadsheet = SpreadsheetApp.openById(sharedSpreadId)
@@ -13,6 +15,7 @@ const expirationRow = 5
 const versionRow = 7
 
 ///////////////// Trigger ////////////////////////////
+
 function removeExpiredFiles() {
     var todayTime = new Date().getTime()
     var range = spreadsheet.getDataRange()
@@ -306,9 +309,12 @@ function showPicker() {
 
 function getOAuthToken() {
     DriveApp.getRootFolder()
-    return ScriptApp.getOAuthToken()
+    return [ScriptApp.getOAuthToken(), developerKey]
 }
 
+function getDeveloperKey() {
+    return developerKey
+}
 ///////////////// DO GET ///////////////////////////////////
 function doGet() {
     return HtmlService.createTemplateFromFile('form.html')

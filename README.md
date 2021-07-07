@@ -50,10 +50,17 @@
         - \*googleusercontent.com/\*
     - API restrictions -> Don't restrict key
 
-4. Open the file `form.html` and update this file with your `API_KEY` 🔑
-    ```js
-    var DEVELOPER_KEY = 'YOUR_API_KEY'
+4. Create a new file `propertyService.ts` and add the following lines of code using your own ids and key (This file contains sensitive information 🔑, DON'T EXPOSE YOUR SENSITIVE INFORMATION 🚨)
+
+    ```ts
+    var scriptProperties = PropertiesService.getScriptProperties()
+    scriptProperties.setProperties({
+        sharedSpreadId: '********************************************',
+        sharedFolderId: '*********************************',
+        developerKey: 'YOUR_DEVELOPER_KEY',
+    })
     ```
+
 5. Enable APIs & services inside Google Cloud Platform project:
 
     - [Setting up OAuth 2.0](https://support.google.com/cloud/answer/6158849?hl=en) with the following setting
@@ -93,19 +100,14 @@
     }
     ```
 
-9. Set your `sharedSpreadId` and `sharedFolderId` inside `Code.ts`. (🚨 Do not use Script properties because it is deprecated )
-    ```ts
-    const sharedSpreadId = '********************************************'
-    const sharedFolderId = '*********************************'
-    ```
-10. Push your changes
+9. Push your changes
     ```sh
     yarn clasp push
     ```
-11. [Create a new deployment](https://developers.google.com/apps-script/concepts/deployments) as a `Web app`
+10. [Create a new deployment](https://developers.google.com/apps-script/concepts/deployments) as a `Web app`
     - Web app -> Execute as : User accessing the web app
     - Web app -> Who has access : Anyone within `YOUR_WORKSPACE_NAME`
-12. Finally, [Add a time-driven trigger](https://developers.google.com/apps-script/guides/triggers/installable)
+11. Finally, [Add a time-driven trigger](https://developers.google.com/apps-script/guides/triggers/installable)
     - Choose a function to run: `removeExpiredFiles`
     - Chose which deployment should run: `Head`
     - Select event source: `Time-driven`

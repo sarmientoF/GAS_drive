@@ -1,0 +1,6 @@
+var scriptProperties = PropertiesService.getScriptProperties()
+scriptProperties.setProperties({
+    sharedSpreadId: '********************************************',
+    sharedFolderId: '*********************************',
+    developerKey: 'YOUR_DEVELOPER_KEY',
+})

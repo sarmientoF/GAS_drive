@@ -68,7 +68,6 @@
         <script>
             // IMPORTANT: Replace the value for DEVELOPER_KEY with the API key obtained
             // from the Google Developers Console.
-            var DEVELOPER_KEY = "YOUR_API_KEY";
             var DIALOG_DIMENSIONS = { width: 600, height: 425 };
             var pickerApiLoaded = false;
 
@@ -97,8 +96,8 @@
                     .getOAuthToken();
             }
 
-            function createPicker(token) {
-                if (pickerApiLoaded && token) {
+            function createPicker(tokens) {
+                if (pickerApiLoaded && tokens[0]) {
                     var DisplayView = new google.picker.DocsView()
                         .setIncludeFolders(true)
                         .setSelectFolderEnabled(true);
@@ -109,8 +108,8 @@
                             google.picker.Feature.MULTISELECT_ENABLED
                         )
                         .hideTitleBar()
-                        .setOAuthToken(token)
-                        .setDeveloperKey(DEVELOPER_KEY)
+                        .setOAuthToken(tokens[0])
+                        .setDeveloperKey(tokens[1])
                         .setCallback(pickerCallback)
                         .setOrigin(google.script.host.origin)
                         .setSize(
