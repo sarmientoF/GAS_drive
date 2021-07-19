@@ -87,65 +87,71 @@ const customMessage = (
 }
 
 function uploadFromDrive(e: any) {
-    // Read Form inputs
-    var arr = e['array[]'] as string[] | string
-    var ids = e.fileId as string
-    var expiration = e.expiration as string
-    var message = e.message as string
-    // Get Files ids and emails
-    var emails = arr.toString().split(',')
-    var fileIds = ids.split(',')
+    try {
+        // Read Form inputs
+        var arr = e['array[]'] as string[] | string
+        var ids = e.fileId as string
+        var expiration = e.expiration as string
+        var message = e.message as string
+        // Get Files ids and emails
+        var emails = arr.toString().split(',')
+        var fileIds = ids.split(',')
 
-    if (fileIds.length == 1) {
-        var fileId = fileIds[0]
-        try {
-            // is file
-            var file = DriveApp.getFileById(fileId)
-            var version = getVersions(fileId)
-            var versionName = version > 0 ? `Version${version}_` : ''
-            var newName = `${versionName}${file.getName()}`
+        if (fileIds.length == 1) {
+            var fileId = fileIds[0]
+            try {
+                // is file
+                var file = DriveApp.getFileById(fileId)
+                var version = getVersions(fileId)
+                var versionName = version > 0 ? `Version${version}_` : ''
+                var newName = `${versionName}${file.getName()}`
 
-            var copy = file.makeCopy(newName, driveFolder)
+                var copy = file.makeCopy(newName, driveFolder)
 
-            shareFileToUsers(
-                emails,
-                fileId,
-                copy.getId(),
-                newName,
-                expiration,
-                version,
-                message
-            )
-        } catch (error) {
-            // is folder
-            var {
-                id: folderId,
-                copyId: copyId,
-                name: folderName,
-                version: version_,
-            } = copySingleFolder(fileIds[0])
+                shareFileToUsers(
+                    emails,
+                    fileId,
+                    copy.getId(),
+                    newName,
+                    expiration,
+                    version,
+                    message
+                )
+            } catch (error) {
+                // is folder
+                var {
+                    id: folderId,
+                    copyId: copyId,
+                    name: folderName,
+                    version: version_,
+                } = copySingleFolder(fileIds[0])
+                shareFolderToUsers(
+                    emails,
+                    folderId,
+                    copyId,
+                    folderName,
+                    expiration,
+                    message,
+                    version_
+                )
+            }
+        } else {
+            // Find folder where files are
+            var { id: folderId_, name: folderName_ } =
+                copyMultipleFiles(fileIds)
             shareFolderToUsers(
                 emails,
-                folderId,
-                copyId,
-                folderName,
+                folderId_,
+                folderId_,
+                folderName_,
                 expiration,
                 message,
-                version_
+                0
             )
         }
-    } else {
-        // Find folder where files are
-        var { id: folderId_, name: folderName_ } = copyMultipleFiles(fileIds)
-        shareFolderToUsers(
-            emails,
-            folderId_,
-            folderId_,
-            folderName_,
-            expiration,
-            message,
-            0
-        )
+        return true
+    } catch (error) {
+        throw new Error('Whoops!')
     }
 }
 
@@ -314,6 +320,9 @@ function getOAuthToken() {
 
 function getDeveloperKey() {
     return developerKey
+}
+function getSpreadsheetURL() {
+    return spreadsheet.getUrl()
 }
 ///////////////// DO GET ///////////////////////////////////
 function doGet() {
