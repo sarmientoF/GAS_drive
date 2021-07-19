@@ -72,6 +72,10 @@
                 pointer-events: none;
             }
 
+            .spread-text {
+                display: block;
+                text-align: center;
+            }
             /* Spinner Style */
             .centered {
                 text-align: center;
@@ -292,6 +296,7 @@
 
             <input type="submit" id="submit" class="submit" value="送信" />
         </form>
+        <a href="/" target="_blank" id="spread_ref" class="spread-text"></a>
     </body>
     <script src="https://apis.google.com/js/api.js?onload=onApiLoad"></script>
     <script src="//code.jquery.com/jquery-1.8.3.js"></script>
@@ -330,6 +335,7 @@
         var inputs = document.getElementsByName('array[]')
         var addBtn = document.getElementById('Add')
         var submitBtn = document.getElementById('submit')
+        var spreadRef = document.getElementById('spread_ref')
 
         ;(function () {
             function handleForm(event) {
@@ -374,12 +380,15 @@
                     .withSuccessHandler(() => {
                         google.script.run
                             .withSuccessHandler((spreadURL) => {
-                                submitBtn.disabled = true
                                 setVisible('.form', true)
                                 setVisible('.loader', false)
+                                submitBtn.disabled = true
+                                submitBtn.value = '送信が完了しました'
+                                spreadRef.innerHTML = '管理スプレッドシートへ'
+                                spreadRef.href = spreadURL
                                 if (
                                     window.confirm(
-                                        'Operation Successful!.\nIf you click "ok" you would be redirected to the spreadsheet.'
+                                        '送信が完了しました!.\n管理スプレッドシートへ?'
                                     )
                                 ) {
                                     window.open(spreadURL, '_blank')
