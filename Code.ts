@@ -297,7 +297,6 @@ function shareFileToUser(
 }
 
 /////////// Google Drive Picker /////////////////////////
-
 function onOpen() {
     SpreadsheetApp.getUi()
         .createMenu('Picker')
