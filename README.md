@@ -50,7 +50,7 @@
         - \*googleusercontent.com/\*
     - API restrictions -> Don't restrict key
 
-4. Create a new file `propertyService.ts` and add the following lines of code using your own ids and key (This file contains sensitive information 🔑, DON'T EXPOSE YOUR SENSITIVE INFORMATION 🚨)
+4. Create a new file `1_propertyService.ts`(Google apps script run files alphabetically, so it will run first this file then go to `2_Code.ts`) and add the following lines of code using your own ids and key (This file contains sensitive information 🔑, DON'T EXPOSE YOUR SENSITIVE INFORMATION 🚨)
 
     ```ts
     var scriptProperties = PropertiesService.getScriptProperties()
