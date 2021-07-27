@@ -4,3 +4,4 @@ scriptProperties.setProperties({
     sharedFolderId: '*********************************',
     developerKey: 'YOUR_DEVELOPER_KEY',
 })
+
