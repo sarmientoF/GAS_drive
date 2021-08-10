@@ -224,7 +224,7 @@ function shareFileToUsers(
 
     emails.forEach((email, i) => {
         let body = customMessage(extraMessage, expiration, fileName, version)
-        shareFileToUser(email, fileId, body, date)
+        shareFileToUser(email, copyId, body, date)
     })
 
     modifySpread([
@@ -285,6 +285,7 @@ function shareFileToUser(
         {
             sendNotificationEmails: true,
             emailMessage: body,
+            supportsAllDrives: true,
         }
     )
     Drive.Permissions.patch(
@@ -327,6 +328,10 @@ function getSpreadsheetURL() {
 function doGet() {
     return HtmlService.createTemplateFromFile('form.html')
         .evaluate()
-        .setTitle('Google Visitor Manager')
         .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .setTitle('Google Visitor Manager')
+    // .setSandboxMode(HtmlService.SandboxMode.NATIVE)
+    // .setXFrameOptionsMode(HtmlService.SandboxMode.NATIVE)
+    // .setXFrameOptionsMode()
 }
